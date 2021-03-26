@@ -13,12 +13,13 @@ class backpropagation(object):
         self.y_train = []
         self.x_train_1 = []
         self.y_train_1 = []
+
         #weights
         self.w1 = np.random.randn(self.inputsize, self.hid1size)
         self.w2 = np.random.randn(self.hid1size, self.hid2size)
         self.w3 = np.random.randn(self.hid2size, self.outputsize)
 
-        self.epoch = 10000
+        self.epoch = 30000
         self.lr = 0.01
         self.loss_list = []
 
@@ -101,11 +102,26 @@ class backpropagation(object):
         self.w2 = np.random.randn(self.hid1size, self.hid2size)
         self.w3 = np.random.randn(self.hid2size, self.outputsize)
 
-        # plt.plot(self.loss_list)
-        # plt.title("Loss curve with lr={}".format(self.lr))
+        if(x.shape[0]==100):
+            plt.plot(self.loss_list)
+            plt.title("Linear Loss curve with lr={}".format(self.lr))
+            plt.ylabel("loss")
+            plt.xlabel("epoch")
+            plt.savefig("linear_loss_epoch.png")
+            plt.close
+            self.loss_list = []
+        else:
+            plt.plot(self.loss_list)
+            plt.title("XOR Loss curve with lr={}".format(self.lr))
+            plt.ylabel("loss")
+            plt.xlabel("epoch")
+            plt.savefig("xor_loss_epoch.png")
+            plt.close
+            self.loss_list = []
 
             
     def show_result(self, x, y, pred_y):
+        count = 0
         plt.subplot(1,2,1)
         plt.title("Ground truth", fontsize=18)
         for i in range(x.shape[0]):
@@ -122,8 +138,21 @@ class backpropagation(object):
             else:
                 plt.plot(x[i][0], x[i][1], "bo")
 
-        plt.savefig("linear.png")
-        plt.show()
+        for i in range(x.shape[0]):
+            if(pred_y[i]-y[i]<0.05 and pred_y[i]-y[i]>-0.05):
+                count+=1
+
+        if(x.shape[0]==100):
+            print("save linear")
+            print("linear accuracy = ", count, "/", x.shape[0],"=", float(count/x.shape[0]))
+            plt.savefig("linear.png")
+            plt.close()
+            
+        else:
+            print("save xor")
+            print("xor accuracy = ", count, "/", x.shape[0],"=", float(count/x.shape[0]))
+            plt.savefig("xor.png")
+            plt.close()
 
 if __name__ == "__main__":
     bp = backpropagation()
