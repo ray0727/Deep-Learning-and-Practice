@@ -900,7 +900,7 @@ int main(int argc, const char* argv[]) {
 	tdl.add_feature(new pattern({ 5, 9, 12}));
 	
 	// restore the model from file
-	tdl.load("./weights/state50000.bin");
+	tdl.load("./weights/lr0.08/state75000.bin");
 
 	// train the model
 	std::vector<board> s;
@@ -940,19 +940,19 @@ int main(int argc, const char* argv[]) {
 		s1.clear();
 		// s2.clear();
 		// if(n==25000){
-		// 	tdl.save("/home/ray/DL_and_practice/HW2/state25000.bin");
+		// 	tdl.save("./weights/lr0.08/state25000.bin");
 		// 	info << "save" << n <<std::endl;
 		// }
 		// if(n==50000){
-		// 	tdl.save("/home/ray/DL_and_practice/HW2/state50000.bin");
+		// 	tdl.save("./weights/lr0.08/state50000.bin");
 		// 	info << "save" << n <<std::endl;
 		// }
 		// if(n==75000){
-		// 	tdl.save("/home/ray/DL_and_practice/HW2/state75000.bin");
+		// 	tdl.save("./weights/lr0.08/state75000.bin");
 		// 	info << "save" << n <<std::endl;
 		// }
 		// if(n==100000){
-		// 	tdl.save("/home/ray/DL_and_practice/HW2/state100000.bin");
+		// 	tdl.save("./weights/lr0.08/state100000.bin");
 		// 	info << "save" << n <<std::endl;
 		// }
 	}
