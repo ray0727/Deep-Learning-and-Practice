@@ -41,7 +41,7 @@ class EEGNet(nn.Module):
         x = self.classify(x)
         return x
 
-def train(train_loader, test_loader, activations, device):
+def train_EEG(train_loader, test_loader, activations, device):
     criterion = nn.CrossEntropyLoss()
     learning_rate = 0.0005
     epochs = 350
@@ -51,7 +51,58 @@ def train(train_loader, test_loader, activations, device):
     for name, activation in activations.items():
         model = EEGNet(activation)
         model.to(device)
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
+        acc_train = list()
+        acc_test = list()
+        print("Training with activation:", name)
+        for epoch in range(1, epochs+1):
+            model.train()
+            correct = 0
+            total_loss = 0
+            for _, (inputs, label) in enumerate(train_loader):
+                inputs = inputs.to(device, dtype=torch.float)
+                label = label.to(device, dtype=torch.long)
+                predict = model(inputs)
+                loss = criterion(predict, label)
+                total_loss += loss.item()
+                
+                pred = predict.argmax(dim=1)
+                for i in range(len(label)):
+                    if pred[i] == label[i]:
+                        correct +=1
+
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+            total_loss = total_loss / float(len(train_loader.dataset))
+            correct = 100. * correct / float(len(train_loader.dataset))
+            acc_train.append(correct)
+            if epoch%10==0:
+                print(f'epoch{epoch:>3d}  loss:{total_loss:.4f}  acc:{correct:.3f}%')
+            model.eval()
+            correct_test = evaluate(model, test_loader, device)
+            if correct_test > best_test_acc[name]:
+                best_test_acc[name] = correct_test
+            acc_test.append(correct_test)
+            if epoch%10==0:
+                print(f'epoch{epoch:>3d}  acc_test:{correct_test:.2f}%')
+
+        df[name+"_train"] = acc_train
+        df[name+"_test" ] = acc_test
+    return df, best_test_acc
+
+def train_Deep(train_loader, test_loader, activations, device):
+    criterion = nn.CrossEntropyLoss()
+    learning_rate = 0.001
+    epochs = 350
+    df = pd.DataFrame()
+    df['epoch'] = range(1, epochs+1)
+    best_test_acc = {"ReLU":0, "LeakyReLU":0, "ELU":0}
+    for name, activation in activations.items():
+        model = DeepConvNet(activation)
+        model.to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
         acc_train = list()
         acc_test = list()
         print("Training with activation:", name)
@@ -107,9 +158,19 @@ def evaluate(model, test_loader, device):
     correct = 100. * correct / float(len(test_loader.dataset))
     return correct
 
-def plot(dataframe):
+def plot_EEG(dataframe):
     plt.figure(figsize=(10,5))
     plt.title("Activation function comparision(EEGNet)", fontsize=18)
+    plt.ylabel("Accuracy(%)", fontsize=18)
+    plt.xlabel("Epoch", fontsize=18)
+    for name in dataframe.columns[1:]:
+        plt.plot('epoch', name, data=dataframe)
+    plt.legend(loc="lower right")
+    plt.show()
+
+def plot_Deep(dataframe):
+    plt.figure(figsize=(10,5))
+    plt.title("Activation function comparision(DeepConvNet)", fontsize=18)
     plt.ylabel("Accuracy(%)", fontsize=18)
     plt.xlabel("Epoch", fontsize=18)
     for name in dataframe.columns[1:]:
@@ -128,10 +189,10 @@ class DeepConvNet(nn.Module):
                 nn.Conv2d(out_channels[i-1], out_channels[i], kernel_size=kernel_size[i]),
                 nn.BatchNorm2d(out_channels[i]),
                 activation,
-                nn.MaxPool2D(kernel_size=(1,2)),
+                nn.MaxPool2d(kernel_size=(1,2)),
                 nn.Dropout(p=0.5)
             ))
-        self.classify = nn.Linear(86400, 2)
+        self.classify = nn.Linear(8600, 2)
     def forward(self, x):
         x = self.conv0(x)
         x = self.conv1(x)
@@ -155,9 +216,16 @@ if __name__== "__main__":
     test_dataset = DataLoader(dataset, batch_size=64, shuffle=True)
     
     activations = {"ReLU":nn.ReLU(), "LeakyReLU":nn.LeakyReLU(), "ELU":nn.ELU()}
-    data, best_test_acc = train(train_dataset, test_dataset, activations, device)
-    plot(data)
+    print("EEGNet")
+    data, best_test_acc = train_EEG(train_dataset, test_dataset, activations, device)
+    plot_EEG(data)
     for name, acc in best_test_acc.items():
-        print(name, " best accuracy: ", acc, "%")
+        print(name, " best accuracy EEG: ", acc, "%")
+
+    print("DeepConvNet")
+    data_deep, best_test_acc_deep = train_Deep(train_dataset, test_dataset, activations, device)
+    plot_Deep(data_deep)
+    for name, acc in best_test_acc_deep.items():
+        print(name, " best accuracy Deep: ", acc, "%")
 
     
