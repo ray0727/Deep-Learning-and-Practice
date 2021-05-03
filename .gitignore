@@ -1,4 +1,6 @@
 *.swp
 *.bin
 *.pth
+*.pt
 *.txt
+HW4/data

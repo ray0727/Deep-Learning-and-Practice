@@ -166,7 +166,7 @@ def plot_EEG(dataframe):
     for name in dataframe.columns[1:]:
         plt.plot('epoch', name, data=dataframe)
     plt.legend(loc="lower right")
-    plt.show()
+    # plt.show()
 
 def plot_Deep(dataframe):
     plt.figure(figsize=(10,5))
@@ -176,7 +176,7 @@ def plot_Deep(dataframe):
     for name in dataframe.columns[1:]:
         plt.plot('epoch', name, data=dataframe)
     plt.legend(loc="lower right")
-    plt.show()
+    # plt.show()
 
 class DeepConvNet(nn.Module):
     def __init__(self, activation=nn.ReLU):
