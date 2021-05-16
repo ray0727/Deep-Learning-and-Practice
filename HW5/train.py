@@ -50,6 +50,7 @@ def train(vae,loader_train,optimizer,teacher_forcing_ratio,kl_weight,tensor2stri
     total_CEloss=0
     total_KLloss=0
     total_BLEUscore=0
+    a = 0
     for word_tensor,tense_tensor in loader_train:
         optimizer.zero_grad()
         word_tensor,tense_tensor=word_tensor[0],tense_tensor[0]

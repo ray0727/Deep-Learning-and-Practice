@@ -36,7 +36,7 @@ class ResNet50(nn.Module):
 epochs = 20   
 momentum = 0.9
 weight_decay = 5e-4
-lr = 0.001
+lr = 0.0008
 
 def train(model, train_loader, test_loader, optimizer, device, num_class, name_type):
     df = pd.DataFrame()
@@ -168,13 +168,13 @@ if __name__== "__main__":
     test_dataset = RetinopathyLoader('./data', mode="test")
     test_loader = DataLoader(test_dataset, batch_size=batch_size_50, shuffle=True, num_workers=4)
     ## resnet50 without pretrained
-    print('resnet50 wo pretrained')
-    model_wo_50 = ResNet18(num_class, pretrained=False)
-    optimizer=optim.SGD(model_wo_50.parameters(),lr=lr,momentum=momentum,weight_decay=weight_decay)
-    df_wo_pretrain_50 = train(model_wo_50, train_loader, test_loader, optimizer=optimizer, device=device, num_class=num_class, name_type='resnet50_wo_pretrain')
-    _, confusion_matrix = evaulate(model_wo_50, test_loader, device, num_class)
-    fig = plot_confusion_matrix(confusion_matrix)
-    fig.savefig('./images/ResNet50_wo_pretrained_weights.png')
+    # print('resnet50 wo pretrained')
+    # model_wo_50 = ResNet18(num_class, pretrained=False)
+    # optimizer=optim.SGD(model_wo_50.parameters(),lr=lr,momentum=momentum,weight_decay=weight_decay)
+    # df_wo_pretrain_50 = train(model_wo_50, train_loader, test_loader, optimizer=optimizer, device=device, num_class=num_class, name_type='resnet50_wo_pretrain')
+    # _, confusion_matrix = evaulate(model_wo_50, test_loader, device, num_class)
+    # fig = plot_confusion_matrix(confusion_matrix)
+    # fig.savefig('./images/ResNet50_wo_pretrained_weights.png')
 
     ## resnet50 with pretrained
     print('resnet50 with pretrained')

@@ -5,7 +5,7 @@ from torch import optim
 import copy
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
-from dataloader import MyDataSet
+from datahelper import MyDataSet
 from model import VAE
 from train import train,evaluate,generateWord
 from util import get_teacher_forcing_ratio,get_kl_weight,get_gaussian_score,plot
@@ -20,7 +20,7 @@ hidden_size = 256  # LSTM hidden size
 latent_size = 32
 conditional_size = 8
 LR = 0.05
-epochs = 200
+epochs = 800
 kl_annealing_type='cycle'  # 'monotonic' or 'cycle'
 time = 2
 #if('monotonic'): time is # of epoch for kl_weight from 0.0 to reach 1.0
@@ -63,15 +63,20 @@ if __name__=='__main__':
         evaluate
         """
         conversion,BLEUscore=evaluate(vae,loader_test,dataset_test.tensor2string)
+        
         # generate words
-        #generated_words=generateWord(vae,latent_size,dataset_test.tensor2string)
-        #Gaussianscore=get_gaussian_score(generated_words)
+        generated_words=generateWord(vae,latent_size,dataset_test.tensor2string)
+        Gaussianscore=get_gaussian_score(generated_words)
+        # print(generated_words)
         BLEUscore_list.append(BLEUscore)
-        print(conversion)
-        #print(generated_words)
-        print(f'BLEU socre:{BLEUscore:.4f}') # Gaussian score:{Gaussianscore:.4f}')
+        # print(conversion)
+
+        # Gaussian score:{Gaussianscore:.4f}
+        print(f'BLEU socre:{BLEUscore:.4f} Gaussian score:{Gaussianscore:.4f}')
         print()
 
+        weights = copy.deepcopy(vae.state_dict())
+        torch.save(weights,os.path.join('models/epochs800_lr0.05',f'{kl_annealing_type}_time{time}_epoch{epoch}.pt'))
         """
         update best model wts
         """
@@ -79,9 +84,9 @@ if __name__=='__main__':
             best_BLEUscore=BLEUscore
             best_model_wts=copy.deepcopy(vae.state_dict())
             # save model
-            torch.save(best_model_wts,os.path.join('models',f'{kl_annealing_type}_time{time}_epochs{epochs}.pt'))
-            fig=plot(epoch,CEloss_list,KLloss_list,BLEUscore_list,teacher_forcing_ratio_list,kl_weight_list)
-            fig.savefig(os.path.join('results',f'{kl_annealing_type}_time{time}_epochs{epochs}.png'))
+            # torch.save(best_model_wts,os.path.join('models',f'{kl_annealing_type}_time{time}_epochs{epochs}.pt'))
+            # fig=plot(epoch,CEloss_list,KLloss_list,BLEUscore_list,teacher_forcing_ratio_list,kl_weight_list)
+            # fig.savefig(os.path.join('results',f'{kl_annealing_type}_time{time}_epochs{epochs}.png'))
         
     torch.save(best_model_wts,os.path.join('models',f'{kl_annealing_type}_time{time}_epochs{epochs}.pt'))
     fig=plot(epochs,CEloss_list,KLloss_list,BLEUscore_list,teacher_forcing_ratio_list,kl_weight_list)
