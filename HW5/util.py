@@ -26,7 +26,6 @@ def get_kl_weight(epoch,epochs,kl_annealing_type,time):
         return (1./(time-1))*(epoch-1) if epoch<time else 1.
 
     else: #cycle
-        ## 4908: iteration
         period = epochs // time
         epoch %= period
         KL_weight = sigmoid((epoch - period // 2) / (period // 10)) / 2

@@ -19,8 +19,10 @@ hidden_size = 256  # LSTM hidden size
 latent_size = 32
 conditional_size = 8
 max_length=15
-##45 0.7 0.23
-file_path= 'epochs1000_lr0.01/cycle_time2_epoch45.pt'  #'score0.84.pt'
+##45 0.7 0.23 1000 0.01
+##22 0.8 0.21 800 0.05
+##53 0.85 0.3 1000 0.05 55good
+file_path= 'cycle_epochs1000_lr0.05/cycle_time2_epoch53.pt'  #'score0.84.pt'
 
 if __name__ == '__main__':
     # dataloader
@@ -45,7 +47,7 @@ if __name__ == '__main__':
         print('test.txt prediction:')
         print(conversion)
         print('generate 100 words with 4 different tenses:')
-        # print(generated_words)
+        print(generated_words)
         print(f'BLEU socre:{BLEUscore:.2f}')
         print(f'Gaussian score:{Gaussianscore:.2f}')
         total_BLEUscore+=BLEUscore
