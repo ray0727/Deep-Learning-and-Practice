@@ -2,6 +2,9 @@
 *.bin
 *.pth
 *.pt
-*.txt
+*.mp4
+*.zip
+HW7/dataset/task_1/images
+HW7/dataset/task_2/CelebA-HQ-img
 HW4/data
 HW6/log
