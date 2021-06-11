@@ -5,7 +5,7 @@ import torch.nn as nn
 class Discriminator(nn.Module):
     def __init__(self,img_shape,c_dim):
         super(Discriminator, self).__init__()
-        self.H,self.W,self.C=img_shape
+        self.C,self.H,self.W=img_shape
         self.conditionExpand=nn.Sequential(
             nn.Linear(24,self.H*self.W*1),
             nn.LeakyReLU()

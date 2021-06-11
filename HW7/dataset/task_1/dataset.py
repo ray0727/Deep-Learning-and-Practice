@@ -32,8 +32,8 @@ def get_iCLEVR_data(root_folder,mode):
         return None, label
 
 class ICLEVRLoader(data.Dataset):
-    def __init__(self, mode='test'):
-        self.root_folder = "/home/ray/DL_and_practice/HW7/dataset/task_1/"
+    def __init__(self, mode='train'):
+        self.root_folder = "/home/ray/Deep-Learning-and-Practice/HW7/dataset/task_1/"
         self.mode = mode
         self.transformation = transforms.Compose([transforms.Resize((64,64)),transforms.ToTensor(),transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])
         self.img_list, self.label_list = get_iCLEVR_data(self.root_folder,mode)
@@ -55,5 +55,5 @@ class ICLEVRLoader(data.Dataset):
             condition = self.label_list[index]
             return condition
 
-a = ICLEVRLoader()
-print(a[3])
+# a = ICLEVRLoader()
+# print(a[3])

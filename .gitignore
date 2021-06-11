@@ -6,5 +6,6 @@
 *.zip
 HW7/dataset/task_1/images
 HW7/dataset/task_2/CelebA-HQ-img
+HW7/dataset/task_1/gan_results
 HW4/data
 HW6/log

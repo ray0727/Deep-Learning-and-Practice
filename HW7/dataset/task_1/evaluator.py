@@ -34,7 +34,7 @@ e.g. [[1,1,0,...,0],[0,1,1,0,...],...]
 class evaluation_model():
     def __init__(self):
         #modify the path to your own path
-        checkpoint = torch.load('logs/classifier/checkpoint.pth')
+        checkpoint = torch.load('/home/ray/Deep-Learning-and-Practice/HW7/classifier_weight.pth')
         self.resnet18 = models.resnet18(pretrained=False)
         self.resnet18.fc = nn.Sequential(
             nn.Linear(512,24),
