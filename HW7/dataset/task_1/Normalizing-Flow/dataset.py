@@ -50,9 +50,13 @@ class ICLEVRLoader(data.Dataset):
             img = Image.open(os.path.join(self.root_folder, 'images', self.img_list[index])).convert("RGB")
             img = self.transformation(img)
             condition = self.label_list[index]
+            condition = torch.tensor(condition)
             return img, condition
         else:
             condition = self.label_list[index]
+            condition = torch.tensor(condition)
             return condition
 
-#print(type(a[0][1]))
+# a = ICLEVRLoader()
+# print((a[0][1]).shape)
+# print(type(a[0][1]))
