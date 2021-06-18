@@ -8,7 +8,7 @@ from train import train
 
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 z_dim=100
-c_dim=200
+c_dim=300
 image_shape=(3,64,64)
 epochs=200
 lr_g=0.00005

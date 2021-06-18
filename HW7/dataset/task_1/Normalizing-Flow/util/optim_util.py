@@ -52,5 +52,4 @@ class NLLLoss(nn.Module):
             - np.log(self.k) * np.prod(z.size()[1:])
         ll = prior_ll + sldj
         nll = -ll.mean()
-
         return nll

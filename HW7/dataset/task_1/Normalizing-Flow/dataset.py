@@ -35,7 +35,7 @@ class ICLEVRLoader(data.Dataset):
     def __init__(self, mode='train'):
         self.root_folder = "/home/ray/Deep-Learning-and-Practice/HW7/dataset/task_1/"
         self.mode = mode
-        self.transformation = transforms.Compose([transforms.Resize((64,64)),transforms.ToTensor(), transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])
+        self.transformation = transforms.Compose([transforms.Resize((64,64)),transforms.ToTensor()])
         self.img_list, self.label_list = get_iCLEVR_data(self.root_folder,mode)
         
         print("> Found %d images..." % (len(self.label_list)))

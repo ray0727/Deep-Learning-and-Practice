@@ -51,6 +51,7 @@ def train(dataloader, D_model, G_model, z_dim, epochs, lr_d, lr_g, mode):
 
             ##back propagation
             loss_D = loss_real+loss_fake
+            # print(loss_D)
             loss_D.backward()
             optimizer_D.step()
 

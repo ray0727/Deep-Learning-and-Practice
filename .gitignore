@@ -4,8 +4,12 @@
 *.pt
 *.mp4
 *.zip
+*.log
 HW7/dataset/task_1/images
 HW7/dataset/task_2/CelebA-HQ-img
 HW7/dataset/task_1/gan_results
+HW7/dataset/task_1/Normalizing-Flow/images
+HW7/dataset/task_1/Normalizing-Flow/wandb
+HW7/dataset/task_1/Normalizing-Flow/weight
 HW4/data
 HW6/log

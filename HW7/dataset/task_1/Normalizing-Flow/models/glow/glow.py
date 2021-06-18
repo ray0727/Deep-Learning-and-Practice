@@ -27,9 +27,9 @@ class Glow(nn.Module):
             sldj = torch.zeros(x.size(0), device=x.device)
         else:
             # Expect inputs in [0, 1]
-            # if x.min() < 0 or x.max() > 1:
-            #     raise ValueError('Expected x in [0, 1], got min/max {}/{}'
-            #                      .format(x.min(), x.max()))
+            if x.min() < 0 or x.max() > 1:
+                raise ValueError('Expected x in [0, 1], got min/max {}/{}'
+                                 .format(x.min(), x.max()))
 
             # De-quantize and convert to logits
             x, sldj = self._pre_process(x)
@@ -47,6 +47,8 @@ class Glow(nn.Module):
         # print("x_cond:", x_cond.shape)
         x_cond = squeeze(x_cond)
         # print("x_cond squeeze:", x_cond.shape)
+        # print("x", x)
+        # print("x_cond", x_cond)
         x, sldj = self.flows(x, x_cond, sldj, reverse)
         x = squeeze(x, reverse=True)
 

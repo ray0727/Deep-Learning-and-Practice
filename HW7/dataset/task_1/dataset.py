@@ -38,6 +38,7 @@ class ICLEVRLoader(data.Dataset):
         self.transformation = transforms.Compose([transforms.Resize((64,64)),transforms.ToTensor(), transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])
         self.img_list, self.label_list = get_iCLEVR_data(self.root_folder,mode)
         
+        
         print("> Found %d images..." % (len(self.label_list)))
         self.num_classes = 24
                 
@@ -55,4 +56,5 @@ class ICLEVRLoader(data.Dataset):
             condition = self.label_list[index]
             return condition
 
-#print(type(a[0][1]))
+# a = ICLEVRLoader()
+# print(a[0][1])
