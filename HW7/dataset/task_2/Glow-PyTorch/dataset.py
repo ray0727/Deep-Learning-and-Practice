@@ -7,7 +7,7 @@ import os
 import numpy as np
 
 def get_CelebA_data(root_folder):
-    img_list = os.listdir(os.path.join(root_folder, 'CelebA-HQ-img'))
+    img_list = sorted(os.listdir(os.path.join(root_folder, 'CelebA-HQ-img')), key=lambda x: int(x[:-4]))
     label_list = []
     f = open(os.path.join(root_folder, 'CelebA-HQ-attribute-anno.txt'), 'r')
     num_imgs = int(f.readline()[:-1])
@@ -41,7 +41,5 @@ class CelebALoader(data.Dataset):
         condition = torch.tensor(condition)
         return img, condition
 
-
 # a = CelebALoader()
-# print((a[0][0]))
-# print((a[0][1]))
+# print(len(a[0][1]))

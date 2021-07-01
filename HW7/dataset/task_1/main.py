@@ -10,15 +10,12 @@ device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 z_dim=100
 c_dim=300
 image_shape=(3,64,64)
-epochs=200
-lr_g=0.00005
-lr_d=0.0002
-batch_size=32
+epochs=500
+lr_g=0.0001
+lr_d=0.0004
+batch_size=64
 
 if __name__=='__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--test_mode', default="test", type=str)
-    args = parser.parse_args()
     #print(args.test_mode)
     # load training data
     dataset_train=ICLEVRLoader(mode="train")
@@ -30,6 +27,7 @@ if __name__=='__main__':
     generator.weight_init(mean=0,std=0.02)
     discrimiator.weight_init(mean=0,std=0.02)
 
-    mode = args.test_mode
+    generator.load_state_dict(torch.load("models/test/z100c300batch64/epoch131_score0.62.pt"))
+    # mode = args.test_mode
     # train
-    train(loader_train,discrimiator,generator,z_dim,epochs,lr_d,lr_g, mode)
+    train(loader_train,discrimiator,generator,z_dim,epochs,lr_d,lr_g)

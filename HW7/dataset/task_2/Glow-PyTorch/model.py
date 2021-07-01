@@ -142,7 +142,7 @@ class FlowNet(nn.Module):
         self.K = K
         self.L = L
 
-        C, H, W = image_shape
+        H, W, C = image_shape
 
         for i in range(L):
             # 1. Squeeze

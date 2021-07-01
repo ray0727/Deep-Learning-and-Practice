@@ -17,6 +17,8 @@ from ignite.metrics import RunningAverage, Loss
 
 from dataset import CelebALoader
 from model import Glow
+from utils import save_image
+import wandb
 
 
 def check_manual_seed(seed):
@@ -25,6 +27,7 @@ def check_manual_seed(seed):
     torch.manual_seed(seed)
 
     print("Using seed: {seed}".format(seed=seed))
+
 
 def compute_loss(nll, reduction="mean"):
     if reduction == "mean":
@@ -35,6 +38,7 @@ def compute_loss(nll, reduction="mean"):
     losses["total_loss"] = losses["nll"]
 
     return losses
+
 
 
 def compute_loss_y(nll, y_logits, y_weight, y, multi_class, reduction="mean"):
@@ -48,8 +52,20 @@ def compute_loss_y(nll, y_logits, y_weight, y, multi_class, reduction="mean"):
     losses["loss_classes"] = loss_classes
     losses["total_loss"] = losses["nll"] + y_weight * loss_classes
 
+    # wandb.log({"total_loss": losses["total_loss"].item(), "loss_classes": losses["loss_classes"].item()})
+
     return losses
 
+
+def norm_ip(img, min, max):
+    img.clamp_(min=min, max=max)
+    img.add_(-min).div_(max - min + 1e-5)
+
+def norm_range(t, range):
+    if range is not None:
+        norm_ip(t, range[0], range[1])
+    else:
+        norm_ip(t, float(t.min()), float(t.max()))
 
 def main(
     dataset,
@@ -80,36 +96,23 @@ def main(
     output_dir,
     saved_optimizer,
     warmup,
+    classifier_weight
 ):
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = "cpu" if (not torch.cuda.is_available() or not cuda) else "cuda:0"
+    # wandb.init(project=args.dataset)
 
     check_manual_seed(seed)
 
-    # ds = check_dataset(dataset, dataroot, augment, download)
-    # image_shape, num_classes, train_dataset, test_dataset = ds
-    image_shape = (3,64,64)
+    image_shape = (64,64,3)
     num_classes = 40
 
     # Note: unsupported for now
     multi_class = True #It's True but this variable doesn't be used now
 
-    # train_loader = data.DataLoader(
-    #     train_dataset,
-    #     batch_size=batch_size,
-    #     shuffle=True,
-    #     num_workers=n_workers,
-    #     drop_last=True,
-    # )
-    dataset_train = CelebALoader()
+
+    dataset_train = CelebALoader() 
     train_loader = DataLoader(dataset_train,batch_size=args.batch_size,shuffle=True,drop_last=True)
-    # test_loader = data.DataLoader(
-    #     test_dataset,
-    #     batch_size=eval_batch_size,
-    #     shuffle=False,
-    #     num_workers=n_workers,
-    #     drop_last=False,
-    # )
 
     model = Glow(
         image_shape,
@@ -131,17 +134,18 @@ def main(
     lr_lambda = lambda epoch: min(1.0, (epoch + 1) / warmup)  # noqa
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
 
+    # wandb.watch(model)
+
     def step(engine, batch):
         model.train()
         optimizer.zero_grad()
 
         x, y = batch
         x = x.to(device)
-
         if y_condition:
             y = y.to(device)
-
             z, nll, y_logits = model(x, y)
+            ### x: torch.Size([batchsize, 3, 64, 64]); y: torch.Size([batchsize, 24]); z: torch.Size([batchsize, 48, 8, 8])
             losses = compute_loss_y(nll, y_logits, y_weight, y, multi_class)
         else:
             z, nll, y_logits = model(x, None)
@@ -156,31 +160,15 @@ def main(
 
         optimizer.step()
 
-        return losses
-
-    def eval_step(engine, batch):
-        model.eval()
-
-        x, y = batch
-        x = x.to(device)
-
-        with torch.no_grad():
-            if y_condition:
-                y = y.to(device)
-                z, nll, y_logits = model(x, y)
-                losses = compute_loss_y(
-                    nll, y_logits, y_weight, y, multi_class, reduction="none"
-                )
-            else:
-                z, nll, y_logits = model(x, None)
-                losses = compute_loss(nll, reduction="none")
 
         return losses
+
 
     trainer = Engine(step)
     checkpoint_handler = ModelCheckpoint(
-        output_dir, "glow", n_saved=2, require_empty=False
+        output_dir, "glow", n_saved=None, require_empty=False
     )
+    ### n_saved (Optional[int]) – Number of objects that should be kept on disk. Older files will be removed. If set to None, all objects are kept.
 
     trainer.add_event_handler(
         Events.EPOCH_COMPLETED,
@@ -193,45 +181,14 @@ def main(
         trainer, "total_loss"
     )
 
-    # evaluator = Engine(eval_step)
-    #
-    # # Note: replace by https://github.com/pytorch/ignite/pull/524 when released
-    # Loss(
-    #     lambda x, y: torch.mean(x),
-    #     output_transform=lambda x: (
-    #         x["total_loss"],
-    #         torch.empty(x["total_loss"].shape[0]),
-    #     ),
-    # ).attach(evaluator, "total_loss")
-    #
-    # if y_condition:
-    #     monitoring_metrics.extend(["nll"])
-    #     RunningAverage(output_transform=lambda x: x["nll"]).attach(trainer, "nll")
-    #
-    #     # Note: replace by https://github.com/pytorch/ignite/pull/524 when released
-    #     Loss(
-    #         lambda x, y: torch.mean(x),
-    #         output_transform=lambda x: (x["nll"], torch.empty(x["nll"].shape[0])),
-    #     ).attach(evaluator, "nll")
 
     pbar = ProgressBar()
     pbar.attach(trainer, metric_names=monitoring_metrics)
 
-    # load pre-trained model if given
+
     if saved_model:
-        model.load_state_dict(torch.load(saved_model))
+        model.load_state_dict(torch.load(saved_model, map_location="cpu")['model'])
         model.set_actnorm_init()
-
-        if saved_optimizer:
-            optimizer.load_state_dict(torch.load(saved_optimizer))
-
-        file_name, ext = os.path.splitext(saved_model)
-        resume_epoch = int(file_name.split("_")[-1])
-
-        @trainer.on(Events.STARTED)
-        def resume_training(engine):
-            engine.state.epoch = resume_epoch
-            engine.state.iteration = resume_epoch * len(engine.state.dataloader)
 
     @trainer.on(Events.STARTED)
     def init(engine):
@@ -256,33 +213,6 @@ def main(
 
             model(init_batches, init_targets)
 
-    # @trainer.on(Events.EPOCH_COMPLETED)
-    # def evaluate(engine):
-    #     evaluator.run(test_loader)
-    #
-    #     scheduler.step()
-    #     metrics = evaluator.state.metrics
-    #
-    #     losses = ", ".join([f"{key}: {value:.2f}" for key, value in metrics.items()])
-    #
-    #     print(f"Validation Results - Epoch: {engine.state.epoch} {losses}")
-    #
-    # timer = Timer(average=True)
-    # timer.attach(
-    #     trainer,
-    #     start=Events.EPOCH_STARTED,
-    #     resume=Events.ITERATION_STARTED,
-    #     pause=Events.ITERATION_COMPLETED,
-    #     step=Events.ITERATION_COMPLETED,
-    # )
-
-    # @trainer.on(Events.EPOCH_COMPLETED)
-    # def print_times(engine):
-    #     pbar.log_message(
-    #         f"Epoch {engine.state.epoch} done. Time per batch: {timer.value():.3f}[s]"
-    #     )
-    #     timer.reset()
-
     trainer.run(train_loader, epochs)
 
 
@@ -292,8 +222,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset",
         type=str,
-        default="cifar10",
-        choices=["cifar10", "svhn"],
+        default="task2",
+        choices=["task1", "task2"],
         help="Type of the dataset to be used.",
     )
 
@@ -434,6 +364,12 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--seed", type=int, default=0, help="manual seed")
+
+    parser.add_argument(
+        "--classifier_weight",
+        default="",
+        help="full path of classifier_weight for task1",
+    )
 
     args = parser.parse_args()
 

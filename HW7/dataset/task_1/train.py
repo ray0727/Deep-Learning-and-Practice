@@ -7,20 +7,22 @@ from evaluator import evaluation_model
 from util import get_test_conditions,save_image
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def train(dataloader, D_model, G_model, z_dim, epochs, lr_d, lr_g, mode):
+def train(dataloader, D_model, G_model, z_dim, epochs, lr_d, lr_g):
     criterion_D = nn.BCELoss()
     criterion_G = nn.BCELoss()
 
     optimizer_D=torch.optim.Adam(D_model.parameters(),lr_d)
     optimizer_G=torch.optim.Adam(G_model.parameters(),lr_g)
     resnet_evaluation = evaluation_model()
-    if mode == "test":
-        test_condition = get_test_conditions(os.path.join("test.json")).to(device)
-    elif mode == "new_test":
-        test_condition = get_test_conditions(os.path.join("new_test.json")).to(device)
-    print(len(test_condition))
+    
+    test_condition = get_test_conditions(os.path.join("test.json")).to(device)
+    new_test_condition = get_test_conditions(os.path.join("new_test.json")).to(device)
+
+    # print(len(test_condition))
     fixed_z = random_z(len(test_condition), z_dim).to(device)
+    new_fixed_z = random_z(len(new_test_condition), z_dim).to(device)
     best_score = 0
+    new_best_score = 0
 
     for epoch in range(1, epochs+1):
         total_loss_D = 0
@@ -70,7 +72,7 @@ def train(dataloader, D_model, G_model, z_dim, epochs, lr_d, lr_g, mode):
             total_loss_G+=loss_G.item()
             total_loss_D+=loss_D.item()
         
-        #evaluate
+        #evaluate test
         G_model.eval()
         D_model.eval()
         with torch.no_grad():
@@ -79,18 +81,28 @@ def train(dataloader, D_model, G_model, z_dim, epochs, lr_d, lr_g, mode):
         if score>best_score:
             best_score=score
             best_model_wts=copy.deepcopy(G_model.state_dict())
-            if mode == "test":
-                torch.save(best_model_wts,os.path.join('models/test',f'epoch{epoch}_score{score:.2f}.pt'))
-            elif mode == "new_test":
-                torch.save(best_model_wts,os.path.join('models/new_test',f'epoch{epoch}_score{score:.2f}.pt'))
+            torch.save(best_model_wts,os.path.join('models/test',f'epoch{epoch}_score{score:.2f}.pt'))
+                
         print(f'avg loss_g: {total_loss_G/len(dataloader):.3f}  avg_loss_d: {total_loss_D/len(dataloader):.3f}')
         print(f'testing score: {score:.2f}')
         print('---------------------------------------------')
-        # savefig
-        if mode == "test":
-            save_image(gen_imgs, os.path.join('gan_results/test', f'epoch{epoch}.png'), nrow=8, normalize=True)
-        elif mode == "new_test":
-            save_image(gen_imgs, os.path.join('gan_results/new_test', f'epoch{epoch}.png'), nrow=8, normalize=True)
+        save_image(gen_imgs, os.path.join('gan_results/test', f'epoch{epoch}.png'), nrow=8, normalize=True)
+       
         
+        ## evaluate new test
+        G_model.eval()
+        D_model.eval()
+        with torch.no_grad():
+            new_gen_imgs=G_model(new_fixed_z, new_test_condition)
+        new_score=resnet_evaluation.eval(new_gen_imgs, new_test_condition)
+        if new_score>new_best_score:
+            new_best_score=new_score
+            new_best_model_wts=copy.deepcopy(G_model.state_dict())
+            torch.save(new_best_model_wts,os.path.join('models/new_test',f'epoch{epoch}_score{new_score:.2f}.pt'))
+        
+        print(f'new testing score: {new_score:.2f}')
+        print('---------------------------------------------')
+        save_image(new_gen_imgs, os.path.join('gan_results/new_test', f'epoch{epoch}.png'), nrow=8, normalize=True)
+
 def random_z(batch_size, z_dim):
     return torch.randn(batch_size,z_dim)

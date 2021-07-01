@@ -14,9 +14,10 @@ class Glow(nn.Module):
 
         # Use bounds to rescale images before converting to logits, not learned
         self.register_buffer('bounds', torch.tensor([0.95], dtype=torch.float32))
-        self.condition_layer = nn.Linear(24, 3*64*64)
+        self.condition_layer = nn.Linear(24, 1*64*64)
+        self.relu = nn.ReLU()
         self.flows = _Glow(in_channels=4*3,  # RGB image after squeeze
-                           cond_channels=3,
+                           cond_channels=1,
                            mid_channels=num_channels,
                            num_levels=num_levels,
                            num_steps=num_steps)
@@ -33,6 +34,7 @@ class Glow(nn.Module):
 
             # De-quantize and convert to logits
             x, sldj = self._pre_process(x)
+            # x_cond, _ = self._pre_process(x_cond)
 
         # print("x:", x.shape)
         # print("x_cond:", x_cond.shape)
@@ -40,15 +42,14 @@ class Glow(nn.Module):
         # print("x squeeze:", x.shape)
         batch = len(x)
         x_cond = self.condition_layer(x_cond)
+        x_cond = self.relu(x_cond)
         # print("x_cond:", x_cond.shape)
 
-        x_cond = x_cond.reshape(batch, 3, 64, 64)
+        x_cond = x_cond.reshape(batch, 1, 64, 64)
         
         # print("x_cond:", x_cond.shape)
         x_cond = squeeze(x_cond)
         # print("x_cond squeeze:", x_cond.shape)
-        # print("x", x)
-        # print("x_cond", x_cond)
         x, sldj = self.flows(x, x_cond, sldj, reverse)
         x = squeeze(x, reverse=True)
 
@@ -56,14 +57,11 @@ class Glow(nn.Module):
 
     def _pre_process(self, x):
         """Dequantize the input image `x` and convert to logits.
-
         See Also:
             - Dequantization: https://arxiv.org/abs/1511.01844, Section 3.1
             - Modeling logits: https://arxiv.org/abs/1605.08803, Section 4.1
-
         Args:
             x (torch.Tensor): Input image.
-
         Returns:
             y (torch.Tensor): Dequantized logits of `x`.
         """
@@ -83,7 +81,6 @@ class Glow(nn.Module):
 
 class _Glow(nn.Module):
     """Recursive constructor for a Glow model. Each call creates a single level.
-
     Args:
         in_channels (int): Number of channels in the input.
         mid_channels (int): Number of channels in hidden layers of each step.
@@ -152,11 +149,9 @@ class _FlowStep(nn.Module):
 def squeeze(x, reverse=False):
     """Trade spatial extent for channels. In forward direction, convert each
     1x4x4 volume of input into a 4x1x1 volume of output.
-
     Args:
         x (torch.Tensor): Input to squeeze or unsqueeze.
         reverse (bool): Reverse the operation, i.e., unsqueeze.
-
     Returns:
         x (torch.Tensor): Squeezed or unsqueezed tensor.
     """
