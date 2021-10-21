@@ -6,6 +6,7 @@
 *.zip
 *.log
 *.png
+*.pyc
 *.jpg
 HW7/dataset/task_1/images
 HW7/dataset/task_2/CelebA-HQ-img
